@@ -34,7 +34,11 @@ func main() {
 	log.Println("erl-indexer v0.0.1")
 
 	var srcDir string
+	var outFile string
+	var urlStem string
 	flag.StringVar(&srcDir, "src", ".", "The directory containing posts to index")
+	flag.StringVar(&outFile, "out", "themes/erl/static/erl.st", "Where you want stork to place the index")
+	flag.StringVar(&urlStem, "url", "https://www.erl.one/posts/", "The URL prefix for search results")
 	flag.Parse()
 
 	m := front.NewMatter()
@@ -70,7 +74,7 @@ func main() {
 		title := fmt.Sprintf("%v", meta["title"])
 		base := filepath.Base(src)
 		ext := filepath.Ext(base)
-		url := "https://www.erl.one/posts/" + base[:strings.LastIndex(base, ext)]
+		url := urlStem + base[:strings.LastIndex(base, ext)]
 
 		log.Println("url " + url)
 
@@ -82,7 +86,7 @@ func main() {
 	}
 
 	buf = append(buf, []byte("\n]\n\n[output]\n")...)
-	buf = append(buf, []byte("filename = \"themes/erl/static/erl.st\"")...)
+	buf = append(buf, []byte("filename = \""+outFile+"\"")...)
 
 	err := ioutil.WriteFile("stork.toml", buf, 0644)
 	if err != nil {
