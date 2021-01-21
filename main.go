@@ -20,9 +20,72 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"github.com/gernest/front"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 func main() {
 	log.Println("erl-indexer v0.0.1")
+
+	var srcDir string
+	flag.StringVar(&srcDir, "src", ".", "The directory containing posts to index")
+	flag.Parse()
+
+	m := front.NewMatter()
+	m.Handle("---", front.YAMLHandler)
+
+	buf := []byte("[input]\n")
+	buf = append(buf, []byte("base_directory = \""+srcDir+"\"")...)
+	buf = append(buf, []byte("\n\nfiles = [\n")...)
+
+	var files []string
+
+	filepath.Walk(srcDir, func(src string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			files = append(files, src)
+		}
+
+		return nil
+	})
+
+	for i, src := range files {
+		// It's a regular file, open it and look for YAML.
+		file, err := os.Open(src)
+		if err != nil {
+			log.Fatal("Unable to open file %v", err)
+		}
+		defer file.Close()
+
+		meta, _, err := m.Parse(file)
+		if err != nil {
+			log.Fatal("Unable to parse front matter %v", err)
+		}
+
+		title := fmt.Sprintf("%v", meta["title"])
+		base := filepath.Base(src)
+		ext := filepath.Ext(base)
+		url := "https://www.erl.one/posts/" + base[:strings.LastIndex(base, ext)]
+
+		log.Println("url " + url)
+
+		if i > 0 {
+			buf = append(buf, []byte(",\n")...)
+		}
+		buf = append(buf, []byte("\t{path=\""+base+
+			"\", url=\"" + url + "\", title=\""+title+"\"}")...)
+	}
+
+	buf = append(buf, []byte("\n]\n\n[output]\n")...)
+	buf = append(buf, []byte("filename = \"themes/erl/static/erl.st\"")...)
+
+	err := ioutil.WriteFile("stork.toml", buf, 0644)
+	if err != nil {
+		log.Fatal("Unable to write config file %v", err)
+	}
 }
