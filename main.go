@@ -45,6 +45,7 @@ func main() {
 	m.Handle("---", front.YAMLHandler)
 
 	buf := []byte("[input]\n")
+	buf = append(buf, []byte("frontmatter_handling=\"Parse\"\n")...)
 	buf = append(buf, []byte("base_directory = \""+srcDir+"\"")...)
 	buf = append(buf, []byte("\n\nfiles = [\n")...)
 
