@@ -31,14 +31,12 @@ import (
 )
 
 func main() {
-	log.Println("erl-indexer v0.0.1")
+	log.Println("hugo-2-stork v0.0.1")
 
 	var srcDir string
-	var outFile string
 	var urlStem string
-	flag.StringVar(&srcDir, "src", ".", "The directory containing posts to index")
-	flag.StringVar(&outFile, "out", "themes/erl/static/erl.st", "Where you want stork to place the index")
-	flag.StringVar(&urlStem, "url", "https://www.erl.one/posts/", "The URL prefix for search results")
+	flag.StringVar(&srcDir, "src", ".", "The hugo directory containing posts to index")
+	flag.StringVar(&urlStem, "url", "https://tomsachsarchive.org/posts/", "The URL prefix for search results")
 	flag.Parse()
 
 	m := front.NewMatter()
@@ -59,7 +57,8 @@ func main() {
 		return nil
 	})
 
-	for i, src := range files {
+	i := 0
+	for _, src := range files {
 		// It's a regular file, open it and look for YAML.
 		file, err := os.Open(src)
 		if err != nil {
@@ -68,26 +67,25 @@ func main() {
 		defer file.Close()
 
 		meta, _, err := m.Parse(file)
-		if err != nil {
-			log.Fatal("Unable to parse front matter %v", err)
+		if err == nil {
+			title := fmt.Sprintf("%v", meta["title"])
+			base := filepath.Base(src)
+			ext := filepath.Ext(base)
+			url := urlStem + base[:strings.LastIndex(base, ext)]
+
+			// Add a comma to seperate entries for each post if we have more than
+			// one.
+			if i > 0 {
+				buf = append(buf, []byte(",\n")...)
+			}
+			buf = append(buf, []byte("\t{path=\""+base+
+				"\", url=\"" + url + "\", title=\""+title+"\"}")...)
+			i = i + 1
 		}
-
-		title := fmt.Sprintf("%v", meta["title"])
-		base := filepath.Base(src)
-		ext := filepath.Ext(base)
-		url := urlStem + base[:strings.LastIndex(base, ext)]
-
-		log.Println("url " + url)
-
-		if i > 0 {
-			buf = append(buf, []byte(",\n")...)
-		}
-		buf = append(buf, []byte("\t{path=\""+base+
-			"\", url=\"" + url + "\", title=\""+title+"\"}")...)
 	}
 
-	buf = append(buf, []byte("\n]\n\n[output]\n")...)
-	buf = append(buf, []byte("filename = \""+outFile+"\"")...)
+	buf = append(buf, []byte("\n]\n\n")...)
+
 
 	err := ioutil.WriteFile("stork.toml", buf, 0644)
 	if err != nil {

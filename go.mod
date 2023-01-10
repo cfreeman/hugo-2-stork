@@ -1,4 +1,4 @@
-module github.com/cfreeman/erl-indexer
+module github.com/cfreeman/hugo-2-stork
 
 go 1.14
 
