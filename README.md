@@ -4,17 +4,18 @@ hugo-2-stork is an application that generates a stork config file from a hugo st
 
 [Stork search](https://stork-search.net) is a library for creating search interfaces on static websites. While [HUGO](https://gohugo.io) is a framework for creating static websites.
 
-Building hugo-2-stork from source:
+Installing hugo-2-stork:
 ```bash
-
-
+$GOBIN=/bin go install github.com/cfreeman/hugo-2-stork@latest
 ```
 
 ```bash
-stork build --input stork.toml --output index.st
+$hugo-2-stork --src=content/posts --url=https://myweb.com
+$stork build --input stork.toml --output index.st
 ```
 
 ## TODO
+* Support multiple source folders.
 * ~~Need to make sure the YAML frontmatter block is indexed.~~
 * ~~More testing of output.~~
 * ~~ability to configure URL stem.~~
